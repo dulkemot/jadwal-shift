@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Jadwal Shift Teknisi</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0B1526;color:#E7EEF7;font-family:Inter,'Segoe UI',system-ui,Arial}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 40px}
+header{padding:20px 0 4px}header b{font-size:20px}header small{display:block;color:#8DBDFF;font-size:12px}
+.today{background:#111F36;border:1px solid #22365A;border-radius:12px;padding:12px 16px;margin-top:12px;font-size:14px}
+.today b{color:#FF8A00}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px;background:#0E1B31;border-radius:12px;overflow:hidden}
+th,td{padding:10px 8px;border:1px solid #22365A;text-align:center}
+th{background:#16294a;color:#8DBDFF;font-size:12px}
+td.hari{background:#111F36;font-weight:700}
+td.sel{cursor:pointer}
+td.Tim1{background:rgba(63,185,80,.15)}td.Tim2{background:rgba(255,138,0,.13)}td.Tim3{background:rgba(141,189,255,.13)}td.Libur{color:#6B84A3}
+.hint{font-size:12.5px;color:#8DBDFF;margin-top:10px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:#BFD2EC}
+@media(max-width:640px){table{font-size:12px}th,td{padding:8px 4px}}
+</style>
+</head>
+<body><div class="wrap">
+<header><b>📅 Jadwal Shift Teknisi</b><small>Klik kotak untuk ganti tim — tersimpan otomatis</small></header>
+<div class="today" id="today"></div>
+<table id="tbl"></table>
+<p class="hint">👆 Klik sel mana pun untuk memutar: Tim 1 → Tim 2 → Tim 3 → Libur. Jadwal hari ini ditandai 🟠.</p>
+<div class="leg"><span>🟢 Tim 1</span><span>🟠 Tim 2</span><span>🔵 Tim 3</span></div>
+</div>
+<script>
+const cls = s => s.replace(/ /g, "");
+async function muat() {
+  const d = await (await fetch("/api/jadwal")).json();
+  const hariIni = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"][new Date().getDay()];
+  const pj = d.jadwal[hariIni]["Pagi (08–16)"];
+  today.innerHTML = `Hari ini <b>${hariIni}</b> — piket pagi: <b>${pj}</b>`;
+  let h = "<tr><th>Hari</th>" + d.shift.map(s => `<th>${s}</th>`).join("") + "</tr>";
+  d.hari.forEach(hh => {
+    h += `<tr><td class="hari">${hh}${hh === hariIni ? " 🟠" : ""}</td>` + d.shift.map(s => {
+      const t = d.jadwal[hh][s];
+      return `<td class="sel ${cls(t)}" data-h="${hh}" data-s="${s}">${t}</td>`;
+    }).join("") + "</tr>";
+  });
+  tbl.innerHTML = h;
+}
+tbl.onclick = async e => {
+  const td = e.target.closest("td.sel"); if (!td) return;
+  const d = await (await fetch("/api/jadwal")).json();
+  const next = d.tim[(d.tim.indexOf(td.textContent) + 1) % d.tim.length];
+  await fetch("/api/jadwal", { method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ hari: td.dataset.h, shift: td.dataset.s, tim: next }) });
+  muat();
+};
+muat();
+</script>
+</body></html>

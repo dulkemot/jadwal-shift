@@ -1,0 +1,1 @@
+{"name":"jadwal-shift","version":"1.0.0","description":"Penjadwal shift tim teknisi - Node.js tanpa dependensi","main":"server.js","scripts":{"start":"node server.js"},"engines":{"node":">=18"},"license":"MIT"}
